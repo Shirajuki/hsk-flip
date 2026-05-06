@@ -6,9 +6,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>HSK Flip</title>
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/icon-192.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon-192.svg">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -440,7 +440,7 @@
     <script src="main.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('./sw.js')
           .then(reg => console.log('SW registered:', reg.scope))
           .catch(err => console.error('SW registration failed:', err));
       } else {

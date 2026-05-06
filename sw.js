@@ -1,24 +1,24 @@
 const CACHE_NAME = 'hsk-flip-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/index.css',
-  '/main.js',
-  '/dashboard.js',
-  '/dialog.js',
-  '/hsk.js',
-  '/md5.js',
-  '/settings.js',
-  '/srs.js',
-  '/study.js',
-  '/tts.js',
-  '/fz_be2e0e16.ttf',
-  '/list/hsk1.json',
-  '/list/hsk2.json',
-  '/list/hsk3.json',
-  '/list/hsk4.json',
-  '/list/hsk5.json',
-  '/list/hsk6.json'
+  './',
+  './index.html',
+  './index.css',
+  './main.js',
+  './dashboard.js',
+  './dialog.js',
+  './hsk.js',
+  './md5.js',
+  './settings.js',
+  './srs.js',
+  './study.js',
+  './tts.js',
+  './fz_be2e0e16.ttf',
+  './list/hsk1.json',
+  './list/hsk2.json',
+  './list/hsk3.json',
+  './list/hsk4.json',
+  './list/hsk5.json',
+  './list/hsk6.json'
 ];
 
 self.addEventListener('install', event => {
@@ -51,7 +51,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => caches.match('/index.html'));
+      }      ).catch(() => caches.match('./index.html'));
     })
   );
 });
