@@ -423,9 +423,28 @@
                 </div>
             </div>
                 <div class="settings-footer">
+                    <button type="button" class="btn" id="exportDataBtn">Export</button>
+                    <button type="button" class="btn" id="importDataBtn">Import</button>
                     <button type="button" class="btn" id="checkUpdateBtn">Check for Updates</button>
                     <button type="button" class="btn" id="settingsCloseBtn">Close</button>
                 </div>
+        </div>
+    </dialog>
+
+    <!-- Import Dialog -->
+    <dialog class="import-dialog" id="importDialog">
+        <div class="import-content">
+            <div class="import-header">
+                <h3>Import Data</h3>
+                <p class="import-subtitle">Paste hsk-flip-rev JSON data below</p>
+            </div>
+            <div class="import-body">
+                <textarea id="importTextarea" class="import-textarea" placeholder="Paste JSON here..."></textarea>
+            </div>
+            <div class="import-actions">
+                <button type="button" class="btn" id="confirmImportBtn">Import</button>
+                <button type="button" class="btn" id="cancelImportBtn">Cancel</button>
+            </div>
         </div>
     </dialog>
 

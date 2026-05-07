@@ -22,6 +22,18 @@ const VIEW_SETTINGS = {
 
     const updateBtn = document.getElementById('checkUpdateBtn');
     updateBtn.addEventListener('click', () => VIEW_SETTINGS.checkForUpdates());
+
+    const exportBtn = document.getElementById('exportDataBtn');
+    exportBtn.addEventListener('click', () => VIEW_SETTINGS.exportData());
+
+    const importBtn = document.getElementById('importDataBtn');
+    importBtn.addEventListener('click', () => VIEW_SETTINGS.openImportDialog());
+
+    const confirmImportBtn = document.getElementById('confirmImportBtn');
+    confirmImportBtn.addEventListener('click', () => VIEW_SETTINGS.importData());
+
+    const cancelImportBtn = document.getElementById('cancelImportBtn');
+    cancelImportBtn.addEventListener('click', () => DIALOG.closeById('importDialog'));
     
     const dlg = document.getElementById('settingsDialog');
     dlg.addEventListener('cancel', (e) => {
@@ -141,6 +153,55 @@ const VIEW_SETTINGS = {
   closeDialog: function() {
     this._fetchNewCards();
     DIALOG.closeById(DIALOG.SETTINGS);
+  },
+
+  exportData: function() {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key.startsWith('hsk-flip-rev')) {
+        data[key] = localStorage.getItem(key);
+      }
+    }
+    const jsonStr = JSON.stringify(data);
+    navigator.clipboard.writeText(jsonStr).then(() => {
+      alert('Data copied to clipboard');
+    }).catch(err => {
+      console.error('Copy failed:', err);
+      alert('Copy failed. Data logged to console.');
+      console.log('Export data:', jsonStr);
+    });
+  },
+
+  openImportDialog: function() {
+    document.getElementById('importTextarea').value = '';
+    DIALOG.openById('importDialog');
+  },
+
+  importData: function() {
+    const textarea = document.getElementById('importTextarea');
+    const raw = textarea.value.trim();
+    if (!raw) {
+      alert('No data pasted');
+      return;
+    }
+    try {
+      const data = JSON.parse(raw);
+      if (typeof data !== 'object' || data === null) {
+        throw new Error('Invalid data format');
+      }
+      Object.keys(data).forEach(key => {
+        if (key.startsWith('hsk-flip-rev')) {
+          localStorage.setItem(key, data[key]);
+        }
+      });
+      SRS_REVIEW._cachedReviewItems = [];
+      alert('Data imported successfully');
+      DIALOG.closeById('importDialog');
+    } catch (err) {
+      console.error('Import failed:', err);
+      alert('Import failed: invalid JSON or data format');
+    }
   },
 };
 
