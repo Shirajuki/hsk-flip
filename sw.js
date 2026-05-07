@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hsk-flip-v2';
+const CACHE_NAME = 'hsk-flip-v3';
 const ASSETS = [
   './',
   './index.html',
