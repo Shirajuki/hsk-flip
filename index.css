@@ -1517,10 +1517,20 @@ main {
   border-color: var(--text);
 }
 
+.study-actions-wrapper {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 10px;
+  width: 100%;
+  align-items: end;
+}
+
 .study-audio-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   margin-left: auto;
+  flex-direction: column-reverse;
+  height: 100%;
 }
 
 .study-audio-btn {
@@ -1529,7 +1539,7 @@ main {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 8px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -1557,7 +1567,7 @@ main {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 8px;
   max-width: 840px;
 }
 

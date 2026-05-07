@@ -298,11 +298,11 @@ const VIEW_HOME_LEVEL_SELECTION = {
           HSK.selectedCards = await HSK_DATA_SERVICE.load(HSK.selectedLevels, HSK.cardCount);
           animateCardsAndUpdate(HSK.selectedCards.slice(0, 9));
           VIEW_HOME_CARD_FOLDER.updateFolderVisibilityAndContent();
-
+          
           setTimeout(() => {
-            countCooldown = false;
             countBtns.forEach(b => b.disabled = false);
-          }, 1000);
+            countCooldown = false;
+          }, 500);
         }
       });
     });
