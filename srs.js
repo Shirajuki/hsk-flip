@@ -5,6 +5,7 @@ const SRS_REVIEW = {
   performanceCutoff: 0.6,
   recentReviewHours: 8,
   floatScale: 1000,
+  _cachedReviewItems: [],
 
   _encodeFloat(value) {
     return Math.round(value * this.floatScale);
@@ -33,6 +34,7 @@ const SRS_REVIEW = {
 
   _saveLevel(level, entries) {
     localStorage.setItem(this._storageKey(level), JSON.stringify(entries));
+    this._cachedReviewItems = [];
   },
 
   _parseDate(value) {
@@ -180,26 +182,15 @@ const SRS_REVIEW = {
       if (found) items.push(found);
     });
 
+    this._cachedReviewItems = items;
     return items;
   },
 
-  getTotalDue(levels) {
-    const now = new Date();
-    const levelKeys = (Array.isArray(levels) ? levels : []).map(level => String(level));
-    if (levelKeys.length === 0) return 0;
-
-    let total = 0;
-    levelKeys.forEach(levelKey => {
-      const entries = this._loadLevel(levelKey);
-      entries.forEach(entry => {
-        const lastReviewed = this._parseDate(entry.lr);
-        if (lastReviewed && this._hoursSince(lastReviewed, now) < this.recentReviewHours) return;
-        const percentOverdue = this._getPercentOverdue(entry, now, true);
-        if (percentOverdue >= 1) total += 1;
-      });
-    });
-
-    return total;
+  async getTotalDue(levels) {
+    if (this._cachedReviewItems.length === 0) {
+      await this.getReviewItems()
+    } 
+    return this._cachedReviewItems.length;
   },
 
   getWeeklyLearnedCounts(levels) {

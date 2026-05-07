@@ -56,14 +56,14 @@ const VIEW_DASHBOARD = {
   // ============================================
   // RENDER LOGIC
   // ============================================
-  _renderDashboardChart: function() {
+  _renderDashboardChart: async function() {
     const chart = document.getElementById('dashboardChart');
     const totalEl = document.getElementById('dashboardTotal');
     const cramBtn = document.getElementById('dashboardCramBtn');
 
     this.reviewData = SRS_REVIEW.getWeeklyLearnedCounts(HSK_LEVELS);
     const maxValue = Math.max(...this.reviewData.map(item => item.value));
-    const total = SRS_REVIEW.getTotalDue(HSK_LEVELS);
+    const total = await SRS_REVIEW.getTotalDue(HSK_LEVELS);
     totalEl.textContent = String(total);
     if (cramBtn) cramBtn.disabled = total === 0;
 
@@ -128,7 +128,7 @@ const VIEW_DASHBOARD = {
   // ============================================
   openDialog: function() {
     DIALOG.openById(DIALOG.DASHBOARD, {
-      callback: () => {
+      callback: async () => {
         this._renderDashboardChart();
         this._renderDashboardList();
       }
