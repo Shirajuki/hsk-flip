@@ -143,10 +143,13 @@ const VIEW_SETTINGS = {
         alert('No service worker registered');
         return;
       }
-      regs.forEach(reg => reg.update());
-      alert('Checking for updates...');
-      // Reload once new SW activates
-      navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+      // Clear all caches to force refetch
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
+        regs.forEach(reg => reg.update());
+        alert('Checking for updates...');
+        // Reload once new SW activates
+        navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+      });
     });
   },
 
