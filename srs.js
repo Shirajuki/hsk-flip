@@ -188,7 +188,7 @@ const SRS_REVIEW = {
 
   async getTotalDue(levels) {
     if (this._cachedReviewItems.length === 0) {
-      await this.getReviewItems()
+      await SRS_REVIEW.getReviewItems(HSK_LEVELS, 0, Number.POSITIVE_INFINITY)
     } 
     return this._cachedReviewItems.length;
   },
