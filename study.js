@@ -19,6 +19,7 @@ const studySession = {
   _index: 0,
   _results: [],
   _showPinyin: false,
+  _notes: [],
 
   init(items, maxCount) {
     const limit = Number.isFinite(maxCount) ? maxCount : HSK.cardCount;
@@ -27,6 +28,7 @@ const studySession = {
     this._index = 0;
     this._results = [];
     this._showPinyin = false;
+    this._notes = [];
   },
 
   currentStep() {
@@ -79,13 +81,23 @@ const studySession = {
     return this._showPinyin;
   },
 
+  setNotes(notes) {
+    this._notes = Array.isArray(notes) ? notes.slice() : [];
+  },
+
+  get notes() {
+    return this._notes.slice();
+  },
+
   result() {
     const correctCount = this._results.filter(r => r && r.correct).length;
     return {
       items: this._items,
       results: this._results,
       correctCount,
-      total: this._items.length
+      total: this._items.length,
+      noteWords: this.notes,
+      levels: HSK.selectedLevels.slice()
     };
   }
 };
@@ -295,6 +307,115 @@ function renderResultSummary(dlg) {
   });
 }
 
+function setResultDialogMode(mode = 'final') {
+  const dlg = document.getElementById('resultDialog');
+  if (!dlg) return;
+  dlg.dataset.mode = mode;
+  dlg.classList.toggle('preview-mode', mode === 'preview');
+}
+
+function openStudyResultPreview() {
+  const sessionData = buildPartialSessionData() || {
+    items: [],
+    results: [],
+    correctCount: 0,
+    total: 0
+  };
+
+  openResultDialog({
+    ...sessionData,
+    mode: 'preview'
+  });
+}
+
+function getNormalizedStudyNotes() {
+  return studySession.notes
+    .map(note => String(note || '').trim())
+    .filter(Boolean);
+}
+
+function createStudyNoteRow(value = '') {
+  const row = document.createElement('div');
+  row.className = 'study-note-row';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'study-note-input';
+  input.value = value;
+  input.placeholder = 'Chinese word';
+  input.autocomplete = 'off';
+  input.autocapitalize = 'off';
+  input.spellcheck = false;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'study-note-remove';
+  removeBtn.setAttribute('aria-label', 'Remove note');
+  removeBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  `;
+  removeBtn.addEventListener('click', function() {
+    row.remove();
+    ensureStudyNoteRows();
+  });
+
+  row.appendChild(input);
+  row.appendChild(removeBtn);
+  return row;
+}
+
+function ensureStudyNoteRows() {
+  const list = document.getElementById('studyNoteList');
+  if (!list) return;
+  if (list.children.length === 0) {
+    list.appendChild(createStudyNoteRow());
+  }
+}
+
+function renderStudyNoteRows() {
+  const list = document.getElementById('studyNoteList');
+  if (!list) return;
+  const notes = getNormalizedStudyNotes();
+  list.innerHTML = '';
+  if (notes.length === 0) {
+    list.appendChild(createStudyNoteRow());
+  } else {
+    notes.forEach(note => list.appendChild(createStudyNoteRow(note)));
+  }
+}
+
+function collectStudyNoteRows() {
+  const list = document.getElementById('studyNoteList');
+  if (!list) return [];
+  return Array.from(list.querySelectorAll('.study-note-input'))
+    .map(input => input.value.trim())
+    .filter(Boolean);
+}
+
+function saveStudyNotesFromDialog() {
+  studySession.setNotes(collectStudyNoteRows());
+}
+
+function openStudyNoteDialog() {
+  renderStudyNoteRows();
+  DIALOG.openById(DIALOG.STUDY_NOTES, {
+    callback: () => {
+      const firstEmptyInput = Array.from(document.querySelectorAll('#studyNoteList .study-note-input'))
+        .find(input => !input.value.trim());
+      const firstInput = firstEmptyInput || document.querySelector('#studyNoteList .study-note-input');
+      if (firstInput) firstInput.focus();
+    }
+  });
+}
+
+function closeStudyNoteDialog() {
+  saveStudyNotesFromDialog();
+  DIALOG.closeById(DIALOG.STUDY_NOTES);
+}
+
 function shuffleArray(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -334,13 +455,15 @@ function setupStudyDialogHandlers() {
 
   const quit = document.getElementById('studyQuit');
   const togglePinyin = document.getElementById('studyTogglePinyin');
+  const previewResultsBtn = document.getElementById('studyPreviewResultsBtn');
+  const notesBtn = document.getElementById('studyNotesBtn');
   const cardWrap = document.getElementById('studyCard');
   const wordAudioBtn = document.getElementById('studyWordAudioBtn');
   const sentenceAudioBtn = document.getElementById('studySentenceAudioBtn');
 
   if (quit) {
-    quit.addEventListener('click', () => {
-      savePartialStudyProgress();
+    quit.addEventListener('click', async () => {
+      await savePartialStudyProgress();
       closeStudyDialog();
     });
   }
@@ -354,6 +477,16 @@ function setupStudyDialogHandlers() {
     togglePinyin.textContent = `Pinyin: ${showPinyin ? 'On' : 'Off'}`;
     togglePinyin.classList.toggle('pinyin-on', showPinyin);
   });
+  if (previewResultsBtn) {
+    previewResultsBtn.addEventListener('click', function() {
+      openStudyResultPreview();
+    });
+  }
+  if (notesBtn) {
+    notesBtn.addEventListener('click', function() {
+      openStudyNoteDialog();
+    });
+  }
 
   wordAudioBtn.addEventListener('click', playWordAudio);
   sentenceAudioBtn.addEventListener('click', playSentenceAudio);
@@ -363,9 +496,9 @@ function setupStudyDialogHandlers() {
   });
   
 
-  dlg.addEventListener('cancel', function(e) {
+  dlg.addEventListener('cancel', async function(e) {
     e.preventDefault();
-    savePartialStudyProgress();
+    await savePartialStudyProgress();
     closeStudyDialog();
   });
 
@@ -407,14 +540,53 @@ function buildPartialSessionData() {
     items,
     results,
     correctCount,
-    total: items.length
+    total: items.length,
+    noteWords: data.noteWords,
+    levels: data.levels
   };
 }
 
-function savePartialStudyProgress() {
+async function savePartialStudyProgress() {
   const sessionData = buildPartialSessionData();
   if (!sessionData) return;
-  SRS_REVIEW.saveSessionResults(sessionData);
+  await SRS_REVIEW.saveSessionResults(sessionData);
+}
+
+function setupStudyNoteDialogHandlers() {
+  const dlg = document.getElementById('studyNoteDialog');
+  if (!dlg) return;
+
+  const closeBtn = document.getElementById('studyNoteCloseBtn');
+  const addBtn = document.getElementById('studyNoteAddBtn');
+  const doneBtn = document.getElementById('studyNoteDoneBtn');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function() {
+      closeStudyNoteDialog();
+    });
+  }
+
+  if (addBtn) {
+    addBtn.addEventListener('click', function() {
+      const list = document.getElementById('studyNoteList');
+      if (!list) return;
+      const row = createStudyNoteRow();
+      list.appendChild(row);
+      const input = row.querySelector('.study-note-input');
+      if (input) input.focus();
+    });
+  }
+
+  if (doneBtn) {
+    doneBtn.addEventListener('click', function() {
+      closeStudyNoteDialog();
+    });
+  }
+
+  dlg.addEventListener('cancel', function(e) {
+    e.preventDefault();
+    closeStudyNoteDialog();
+  });
 }
 
 function setupResultDialogHandlers() {
@@ -424,26 +596,30 @@ function setupResultDialogHandlers() {
   const closeBtn = document.getElementById('resultCloseBtn');
   const retryBtn = document.getElementById('resultRetryBtn');
 
-  const saveSessionIfNeeded = () => {
+  const isPreviewMode = () => dlg.dataset.mode === 'preview';
+
+  const saveSessionIfNeeded = async () => {
+    if (isPreviewMode()) return;
     const sessionData = sessionStore.get('resultDialog');
     if (sessionData && !sessionData.savedToReview) {
-      SRS_REVIEW.saveSessionResults(sessionData);
+      await SRS_REVIEW.saveSessionResults(sessionData);
       sessionData.savedToReview = true;
       sessionStore.set('resultDialog', sessionData);
     }
   };
 
   if (closeBtn) {
-    closeBtn.addEventListener('click', function() {
-      saveSessionIfNeeded();
+    closeBtn.addEventListener('click', async function() {
+      await saveSessionIfNeeded();
       closeResultDialog();
     });
   }
 
   if (retryBtn) {
-    retryBtn.addEventListener('click', function() {
+    retryBtn.addEventListener('click', async function() {
+      if (isPreviewMode()) return;
       const sessionData = sessionStore.get('resultDialog');
-      saveSessionIfNeeded();
+      await saveSessionIfNeeded();
       closeResultDialog();
       if (sessionData && Array.isArray(sessionData.items)) {
         openStudyDialog(sessionData.items);
@@ -451,9 +627,9 @@ function setupResultDialogHandlers() {
     });
   }
 
-  dlg.addEventListener('cancel', function(e) {
+  dlg.addEventListener('cancel', async function(e) {
     e.preventDefault();
-    saveSessionIfNeeded();
+    await saveSessionIfNeeded();
     closeResultDialog();
   });
 
@@ -461,6 +637,7 @@ function setupResultDialogHandlers() {
     if (!dlg.open) return;
     if (event.repeat) return;
     if (event.code !== 'Space') return;
+    if (isPreviewMode()) return;
 
     const retryBtn = document.getElementById('resultRetryBtn');
     if (!retryBtn) return;
@@ -502,16 +679,21 @@ function closeStudyDialog() {
   });
 }
 function openResultDialog(sessionData) {
+  const mode = sessionData && sessionData.mode === 'preview' ? 'preview' : 'final';
   DIALOG.openById(DIALOG.STUDY_RESULT, {
     callback: (dlg) => {
       sessionStore.set('resultDialog', sessionData);
+      setResultDialogMode(mode);
       renderResultSummary(dlg);
     }
   });
 }
 function closeResultDialog() {
   DIALOG.closeById(DIALOG.STUDY_RESULT, {
-    callback: () => { sessionStore.clear('resultDialog'); }
+    callback: () => {
+      setResultDialogMode('final');
+      sessionStore.clear('resultDialog');
+    }
   });
 }
 
@@ -520,5 +702,6 @@ function closeResultDialog() {
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
   setupStudyDialogHandlers();
+  setupStudyNoteDialogHandlers();
   setupResultDialogHandlers();
 });

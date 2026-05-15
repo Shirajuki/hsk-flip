@@ -2,6 +2,7 @@ const DIALOG = {
     HOME_CARD_FOLDER: 'folderDialog',
     HOME_LEVEL_SELECTION: 'levelDialog',
     STUDY: 'studyDialog',
+    STUDY_NOTES: 'studyNoteDialog',
     STUDY_RESULT: 'resultDialog',
     DASHBOARD: 'dashboardDialog',
     DASHBOARD_LIST: 'listDialog',

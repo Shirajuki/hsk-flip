@@ -156,8 +156,8 @@ header {
 .folder-tab {
   background: var(--surface);
   border:1px solid var(--border);
-  border-bottom: none;
-  border-radius: 12px 12px 0 0;
+  border-bottom-color: rgba(17, 17, 17, 0.08);
+  border-radius: 12px 12px 12px 0;
   padding: 10px 20px;
   display: flex;
   justify-content: space-between;
@@ -181,7 +181,7 @@ header {
   background: var(--surface);
   border:1px solid var(--border);
   border-radius: 0 12px 12px 12px;
-  min-height: 40px;
+  min-height: 20px;
   position: relative;
   top: -1px;
   z-index: 1;
@@ -203,7 +203,7 @@ header {
   border-radius: 0;
   background: rgba(0, 0, 0, 0.32);
   z-index: 1300;
-  padding: 24px 16px;
+  padding: 24px 12px;
   display: none;
   opacity: 0;
 
@@ -389,7 +389,7 @@ main {
   align-items: center;
 
   .action-row {
-    margin: 16px auto 0 auto;
+    margin: 12px auto 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1233,7 +1233,6 @@ main {
 
     .dialog-actions {
       margin-top: auto;
-      padding-top: 8px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -1316,8 +1315,39 @@ main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 12px 12px;
     border-bottom: 1px solid var(--border);
+  }
+
+  .study-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .study-header-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    flex: 0 0 auto;
+  }
+
+  .study-header-icon-btn:hover {
+    background: var(--bg);
+    border-color: var(--border-strong);
+  }
+
+  .study-header-icon-btn:active {
+    transform: translateY(1px);
   }
 
   .study-close {
@@ -1401,7 +1431,7 @@ main {
   gap: 6px;
 }
 
-.study-card-back-wrapper {
+.study-card-wrapper {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -1593,6 +1623,154 @@ main {
 .study-progress { width: 100%; height: 10px; background: var(--surface-soft); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
 .study-progress-bar { height: 100%; background: linear-gradient(90deg,#4caf50,#2e7d32); width: 0%; transition: width 0.25s ease; }
 
+.study-note-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border: none;
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 1305;
+  padding: 24px 12px;
+  display: none;
+  opacity: 0;
+}
+
+.study-note-dialog[open] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: resultBackdropIn 0.45s ease-out both;
+}
+
+.study-note-dialog.closing {
+  animation: resultBackdropOut 0.32s ease-in both;
+}
+
+.study-note-dialog[open] .study-note-content {
+  animation: resultDialogIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.study-note-dialog.closing .study-note-content {
+  animation: resultDialogOut 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.study-note-content {
+  width: min(560px, 100%);
+  max-height: 90vh;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(14px) scale(0.98);
+}
+
+.study-note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.study-note-header h3 {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.study-note-close {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: 8px;
+  transition: color 0.18s ease, background 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.study-note-close:hover {
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+.study-note-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.study-note-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.study-note-input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: var(--font-size-md);
+}
+
+.study-note-input:focus {
+  outline: none;
+  border-color: var(--text);
+  background: var(--surface);
+}
+
+.study-note-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  flex: 0 0 auto;
+}
+
+.study-note-remove:hover {
+  color: var(--text);
+  background: var(--surface-soft);
+  border-color: var(--border-strong);
+}
+
+.study-note-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.study-note-actions .btn {
+  flex: 1;
+}
+
+.study-note-add-btn {
+  background: var(--surface);
+  color: var(--text);
+}
+
 /* ###################################################################
 > RESULT DIALOG
 ################################################################### */
@@ -1608,7 +1786,7 @@ main {
   border-radius: 0;
   background: rgba(0, 0, 0, 0.32);
   z-index: 1300;
-  padding: 24px 16px;
+  padding: 24px 12px;
   display: none;
   opacity: 0;
 
@@ -1720,6 +1898,14 @@ main {
   }
 }
 
+.result-dialog.preview-mode .result-actions {
+  justify-content: flex-end;
+}
+
+.result-dialog.preview-mode #resultRetryBtn {
+  display: none;
+}
+
 /* ###################################################################
 > LIST DIALOG
 ################################################################### */
@@ -1735,7 +1921,7 @@ main {
   border-radius: 0;
   background: rgba(0, 0, 0, 0.32);
   z-index: 1350;
-  padding: 24px 16px;
+  padding: 24px 12px;
   display: none;
   opacity: 0;
 
@@ -1913,12 +2099,12 @@ main {
   }
   .study-character { font-size: var(--font-size-xxl); }
   .study-choices { grid-template-columns: 1fr; }
-  .result-content { padding: 16px; }
+  .result-content { padding: 16px 12px; }
   .dashboard-chart { grid-template-columns: repeat(7, minmax(0, 1fr)); height: 180px; }
   .dashboard-header { flex-direction: column; align-items: flex-start; }
   .dashboard-header-actions { width: 100%; justify-content: space-between; }
-  .dashboard-shell { padding: 16px; }
-  .list-content { padding: 16px; }
+  .dashboard-shell { padding: 16px 12px; }
+  .list-content { padding: 16px 12px; }
 }
 
 footer {
@@ -1933,52 +2119,52 @@ footer {
   border-radius: 12px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
   overflow: hidden;
+}
 
-  div:first-child {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    padding: 12px 14px;
-    font-size: var(--font-size-sm);
-    color: var(--text-muted);
-    background: var(--surface-soft);
-    white-space: nowrap;
-    overflow: hidden;
-  }
+footer > div:first-child {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  background: var(--surface-soft);
+  white-space: nowrap;
+  overflow: hidden;
+}
 
-  div:last-child {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
+footer > div:last-child {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
 
-    .footer-btn {
-      flex: 1;
-      min-width: 80px;
-      padding: 8px 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--surface);
-      color: var(--text);
-      border: none;
-      border-left: 1px solid var(--border);
-      cursor: pointer;
-      transition: background 0.18s ease, color 0.18s ease;
-    
-      &:hover {
-        background: var(--bg);
-      }
-    
-      &:active {
-        background: var(--border);
-      }
+footer > div:last-child .footer-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 8px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--text);
+  border: none;
+  border-left: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
 
-      &.active {
-        background: var(--text);
-        color: var(--surface);
-      }
-    }
-  }
+footer > div:last-child .footer-btn:hover {
+  background: var(--bg);
+}
+
+footer > div:last-child .footer-btn:active {
+  background: var(--border);
+}
+
+footer > div:last-child .footer-btn.active {
+  background: var(--text);
+  color: var(--surface);
 }
 
 
@@ -2119,14 +2305,10 @@ footer {
 
   footer {
     margin-top: 10px;
+  }
 
-    marquee {
-      padding: 10px 12px;
-    }
-  
-    div {
-      font-size: var(--font-size-sm);
-    }
+  footer div {
+    font-size: var(--font-size-sm);
   }
 
   .dialog-content {

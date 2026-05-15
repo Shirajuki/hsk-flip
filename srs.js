@@ -38,9 +38,17 @@ const SRS_REVIEW = {
   },
 
   _parseDate(value) {
-    if (!value) return null;
-    const date = new Date(value);
+    if (value == null || value === '') return null;
+    const normalizedValue =
+      typeof value === 'number'
+        ? value
+        : (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value);
+    const date = new Date(normalizedValue);
     return Number.isNaN(date.getTime()) ? null : date;
+  },
+
+  _normalizeChineseWord(value) {
+    return String(value || '').trim();
   },
 
   _getWeekdayIndex(date) {
@@ -64,19 +72,29 @@ const SRS_REVIEW = {
     return ms / (1000 * 60 * 60 * 24);
   },
 
+  _getDaysBetweenReviews(entry) {
+    return Math.max(
+      0.0001,
+      this._decodeFloat(entry.da, this.defaultDaysBetweenReviews)
+    );
+  },
+
   _getDaysSince(entry, now) {
     const lastReviewed = this._parseDate(entry.lr);
     if (!lastReviewed) {
-      return this._decodeFloat(entry.da, this.defaultDaysBetweenReviews);
+      return 0;
     }
     return Math.max(0, this._daysBetween(lastReviewed, now));
   },
 
+  _isDue(entry, now) {
+    const lastReviewed = this._parseDate(entry.lr);
+    if (!lastReviewed) return false;
+    return this._getDaysSince(entry, now) >= this._getDaysBetweenReviews(entry);
+  },
+
   _getPercentOverdue(entry, now, correct) {
-    const daysBetweenReviews = Math.max(
-      0.0001,
-      this._decodeFloat(entry.da, this.defaultDaysBetweenReviews)
-    );
+    const daysBetweenReviews = this._getDaysBetweenReviews(entry);
     const daysSince = this._getDaysSince(entry, now);
     if (!correct) return 1;
     return Math.min(2, daysSince / daysBetweenReviews);
@@ -84,6 +102,34 @@ const SRS_REVIEW = {
 
   _clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
+  },
+
+  async _findNotedItemsByLevel(noteWords, levels) {
+    const matchesByLevel = new Map();
+    if (noteWords.size === 0) return matchesByLevel;
+
+    const levelKeys = (Array.isArray(levels) ? levels : [])
+      .map(level => String(level));
+    if (levelKeys.length === 0) return matchesByLevel;
+
+    await Promise.all(levelKeys.map(levelKey => HSK_DATA_SERVICE.fetch(levelKey)));
+
+    levelKeys.forEach(levelKey => {
+      const items = HSK_DATA_SERVICE._cache.get(levelKey) || [];
+      const matchedItems = [];
+      items.forEach(item => {
+        const simplified = this._normalizeChineseWord(item && item.simplified);
+        const traditional = this._normalizeChineseWord(item && item.traditional);
+        if (noteWords.has(simplified) || noteWords.has(traditional)) {
+          matchedItems.push(item);
+        }
+      });
+      if (matchedItems.length > 0) {
+        matchesByLevel.set(levelKey, matchedItems);
+      }
+    });
+
+    return matchesByLevel;
   },
 
   _updateEntry(entry, performanceRating, now) {
@@ -108,13 +154,21 @@ const SRS_REVIEW = {
 
     entry.di = this._encodeFloat(difficulty);
     entry.da = this._encodeFloat(Math.max(0.1, nextDaysBetween));
-    entry.lr = now.toISOString();
+    entry.lr = now.getTime();
   },
 
-  saveSessionResults(sessionData) {
+  async saveSessionResults(sessionData) {
     if (!sessionData || !Array.isArray(sessionData.items)) return;
     const now = new Date();
     const byLevel = new Map();
+    const notedWords = new Set(
+      (Array.isArray(sessionData.noteWords) ? sessionData.noteWords : [])
+        .map(note => this._normalizeChineseWord(note))
+        .filter(Boolean)
+    );
+    const noteLevels = Array.isArray(sessionData.levels) && sessionData.levels.length > 0
+      ? sessionData.levels
+      : HSK.selectedLevels;
 
     sessionData.items.forEach((item, index) => {
       if (!item || item.id == null) return;
@@ -148,6 +202,30 @@ const SRS_REVIEW = {
 
       this._saveLevel(levelKey, Array.from(entryMap.values()));
     });
+
+    const notedItemsByLevel = await this._findNotedItemsByLevel(notedWords, noteLevels);
+    notedItemsByLevel.forEach((items, levelKey) => {
+      const entries = this._loadLevel(levelKey);
+      const entryMap = new Map(entries.map(entry => [String(entry.id), entry]));
+
+      items.forEach(item => {
+        const idStr = String(item.id);
+        let entry = entryMap.get(idStr);
+        if (!entry) {
+          entry = {
+            id: item.id,
+            di: this._encodeFloat(this.defaultDifficulty),
+            da: this._encodeFloat(this.defaultDaysBetweenReviews),
+            lr: null
+          };
+        }
+
+        this._updateEntry(entry, 0.2, now);
+        entryMap.set(idStr, entry);
+      });
+
+      this._saveLevel(levelKey, Array.from(entryMap.values()));
+    });
   },
 
   async getReviewItems(levels, minCount = 10, maxCount = 20) {
@@ -162,10 +240,10 @@ const SRS_REVIEW = {
       const entries = this._loadLevel(levelKey);
       entries.forEach(entry => {
         const lastReviewed = this._parseDate(entry.lr);
-        if (lastReviewed) {
-          const hoursSince = (now.getTime() - lastReviewed.getTime()) / (1000 * 60 * 60);
-          if (hoursSince < this.recentReviewHours) return;
-        }
+        if (!lastReviewed) return;
+        const hoursSince = (now.getTime() - lastReviewed.getTime()) / (1000 * 60 * 60);
+        if (hoursSince < this.recentReviewHours) return;
+        if (!this._isDue(entry, now)) return;
         const percentOverdue = this._getPercentOverdue(entry, now, true);
         candidates.push({ levelKey, entry, percentOverdue });
       });
@@ -188,7 +266,7 @@ const SRS_REVIEW = {
 
   async getTotalDue(levels) {
     if (this._cachedReviewItems.length === 0) {
-      await SRS_REVIEW.getReviewItems(HSK_LEVELS, 0, Number.POSITIVE_INFINITY)
+      await SRS_REVIEW.getReviewItems(levels, 0, Number.POSITIVE_INFINITY)
     } 
     return this._cachedReviewItems.length;
   },

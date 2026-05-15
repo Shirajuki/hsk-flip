@@ -2,6 +2,7 @@ const TTS = {
   _cache: new Map(),
   types: ['none', 'offline', 'online'],
   voices: [],
+  _secondRun: false,
 
   init: function() {
     const voices = window.speechSynthesis.getVoices();
@@ -12,13 +13,13 @@ const TTS = {
 
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
       window.speechSynthesis.onvoiceschanged = () => this.init();
+      this._secondRun = false;
     }
 
     const storedVoice = HSK.settings.ttsVoice || '';
     this._selectedVoice = this.voices.find((voice) => (voice.voiceURI || voice.name) === storedVoice) || this.voices[0];
 
-    console.log(this._selectedVoice);
-    if (!this._selectedVoice) {
+    if (!this._selectedVoice && this._secondRun) {
       this.types = ['none', 'online'];
       HSK.settings.tts = 'online';
       HSK.settings.ttsVoice = '';
